@@ -1,4 +1,4 @@
-package data;
+package main.data;
 
 import java.util.Arrays;
 
@@ -9,13 +9,13 @@ public class ClassifierImage {
     /**
      * Bitmap image array in format [x][y][rgbColor]
      */
-    int[][][] image;
+    private byte[][][] image;
 
-    public ClassifierImage(int[][][] image) {
+    public ClassifierImage(byte[][][] image) {
         this.image = image;
     }
 
-    public int[] getPixelAt(int x, int y) {
+    public byte[] getPixelAt(int x, int y) {
         return image[x][y];
     }
 
@@ -28,7 +28,7 @@ public class ClassifierImage {
     }
 
     private int getTotalSize() {
-        if(image==null) {
+        if(image == null) {
             return 0;
         }
         return (image.length)*(image[0].length)*(image[0][0].length);
@@ -37,13 +37,14 @@ public class ClassifierImage {
     /**
      * @return the image as a linear array
      */
-    public int[] toFlatImage() {
-        int[] flattenedImage = new int[getTotalSize()];
+    public byte[] toFlatImage() {
+        byte[] flattenedImage = new byte[getTotalSize()];
         int i = 0;
-        for(int[][] row : image) {
-            for(int[] pixel : row) {
-                for(int colorValue : pixel) {
-                    flattenedImage[i++] = colorValue;
+        for(byte[][] row : image) {
+            for(byte[] pixel : row) {
+                for(byte colorValue : pixel) {
+                    flattenedImage[i] = colorValue;
+                    ++i;
                 }
             }
         }
@@ -52,9 +53,7 @@ public class ClassifierImage {
 
     @Override
     public boolean equals(Object other) {
-        if(!(other instanceof ClassifierImage)) {
-            return false;
-        }
-        return Arrays.equals(image, ((ClassifierImage)other).image);
+        return (other instanceof ClassifierImage)
+                && (Arrays.equals(image, ((ClassifierImage) other).image));
     }
 }

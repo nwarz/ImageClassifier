@@ -1,9 +1,9 @@
-package cifar10;
+package main.cifar10;
 
-import data.ClassifierImage;
+import main.data.ClassifierImage;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
-import config.Config;
+import main.config.Config;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -39,12 +39,14 @@ public class Cifar10BinaryReader {
      * @throws IOException
      */
     private static Map<Integer,String> readClassNames(String path) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path), Charset.availableCharsets().get("US-ASCII")));
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(
+                    new FileInputStream(path),
+                    Charset.availableCharsets().get("US-ASCII")));
         Map<Integer,String> classNames = new HashMap<>();
         for(int i=0; reader.ready(); i++) {
             classNames.put(i, reader.readLine());
         }
-
         return classNames;
     }
 
@@ -64,9 +66,10 @@ public class Cifar10BinaryReader {
         int labelSize = 1;
         int imageSize = Config.RGB_FLAT_IMAGE_SIZE;
         byte[] imageBuffer = new byte[imageSize];
-        int imagesRead = 0;
 
-        assert binaryDataStream.available() > 0;
+        if(binaryDataStream.available() <= 0) {
+            throw new IOException("binary data stream not available");
+        }
 
         // read each binary image in the file
         while (binaryDataStream.available() >= labelSize + imageSize) {
@@ -74,18 +77,18 @@ public class Cifar10BinaryReader {
 
             int imageBytesRead = binaryDataStream.read(imageBuffer);
             if (imageBytesRead != imageSize) {
-                throw new IOException("expected image to contain " + imageSize + "bytes, " + "actually read " + imageBytesRead);
+                throw new IOException("expected image to contain " + imageSize + "bytes, "
+                        + "actually read " + imageBytesRead);
             }
 
-            byte[] reds = Arrays.copyOfRange(imageBuffer, 0, Config.ONE_COLOR_FLAT_IMAGE_SIZE);
-            byte[] greens = Arrays.copyOfRange(imageBuffer, Config.ONE_COLOR_FLAT_IMAGE_SIZE, 2*Config.ONE_COLOR_FLAT_IMAGE_SIZE);
-            byte[] blues = Arrays.copyOfRange(imageBuffer, 2*Config.ONE_COLOR_FLAT_IMAGE_SIZE, 3*Config.ONE_COLOR_FLAT_IMAGE_SIZE);
+            byte[] reds = Arrays.copyOfRange(imageBuffer, 0, Config.PER_COLOR_FLAT_IMAGE_SIZE);
+            byte[] greens = Arrays.copyOfRange(imageBuffer, Config.PER_COLOR_FLAT_IMAGE_SIZE, 2*Config.PER_COLOR_FLAT_IMAGE_SIZE);
+            byte[] blues = Arrays.copyOfRange(imageBuffer, 2*Config.PER_COLOR_FLAT_IMAGE_SIZE, 3*Config.PER_COLOR_FLAT_IMAGE_SIZE);
 
-            assert imageBuffer.length == Config.RGB_FLAT_IMAGE_SIZE;
-            assert imageBuffer[Config.RGB_FLAT_IMAGE_SIZE -1] != 0;
+            assert imageBuffer[Config.RGB_FLAT_IMAGE_SIZE - 1] != 0;
 
             int i = 0;
-            int[][][] rawImage = new int[Config.IMAGE_WIDTH][Config.IMAGE_WIDTH][3];
+            byte[][][] rawImage = new byte[Config.IMAGE_WIDTH][Config.IMAGE_WIDTH][3];
             for(int y = 0; y < Config.IMAGE_WIDTH; y++) {
                 for (int x = 0; x < Config.IMAGE_WIDTH; x++) {
                     rawImage[x][y][0] = reds[i];
@@ -96,10 +99,8 @@ public class Cifar10BinaryReader {
             }
             ClassifierImage image = new ClassifierImage(rawImage);
             classifiedImages.add(new DefaultKeyValue<>(classNames.get(label), image));
-            ++imagesRead;
         }
 
-        System.out.println(imagesRead + " images read");
         return classifiedImages;
     }
 
@@ -110,13 +111,10 @@ public class Cifar10BinaryReader {
      * @throws IOException
      */
     public static List<KeyValue<String,ClassifierImage>> loadTrainingData() throws IOException {
-        System.out.println("Loading training images:");
-
         List<KeyValue<String,ClassifierImage>> trainingImages = new ArrayList<>();
         for(String trainingImagesPath : Config.TRAINING_IMAGES_PATHS) {
             trainingImages.addAll(readCifar10Dataset(trainingImagesPath));
         }
-
         return trainingImages;
     }
 
@@ -126,9 +124,7 @@ public class Cifar10BinaryReader {
      * @return
      * @throws IOException
      */
-    public static List<KeyValue<String, ClassifierImage>> loadTestData() throws IOException {
-        System.out.println("Loading test images:");
-
+    public static List<KeyValue<String,ClassifierImage>> loadTestData() throws IOException {
         return readCifar10Dataset(Config.TEST_IMAGES_PATH);
     }
 }

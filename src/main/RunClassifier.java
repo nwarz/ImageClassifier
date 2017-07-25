@@ -1,7 +1,9 @@
-import cifar10.Cifar10BinaryReader;
-import classifier.Calculations;
-import classifier.KNNClassifier;
-import data.ClassifierImage;
+package main;
+
+import main.cifar10.Cifar10BinaryReader;
+import main.classifier.Classifiers;
+import main.classifier.KNNClassifier;
+import main.data.ClassifierImage;
 import org.apache.commons.collections4.KeyValue;
 
 import java.io.IOException;
@@ -22,41 +24,48 @@ public class RunClassifier {
      * @throws IOException
      */
     private static void runKNNClassifier() throws IOException {
+        Logger.setToConsoleLogger();
 
         // load CIFAR-10 training and test images
+        Logger.log("Loading training images...");
         List<KeyValue<String, ClassifierImage>> labeledTrainingImages = Cifar10BinaryReader.loadTrainingData();
-        List<KeyValue<String, ClassifierImage>> labeledTestImages = Cifar10BinaryReader.loadTestData();
+        Logger.log("Loaded " + labeledTrainingImages.size() + " training images");
 
-        //set aside part of the training set for validation
+        Logger.log("Loading test images");
+        List<KeyValue<String, ClassifierImage>> labeledTestImages = Cifar10BinaryReader.loadTestData();
+        Logger.log("Loaded " + labeledTestImages.size() + " test images");
+
+
+        // set aside part of the training set for validation
         // 1 out of every numFolds images will be used for validation
-        List<KeyValue<String, ClassifierImage>> labeledValidationImages = new ArrayList<>();
-        int numFolds = 50;
-        for(int i = 0; i < labeledTrainingImages.size(); i+=numFolds) {
-            labeledValidationImages.add(labeledTrainingImages.remove(i));
-        }
+        List<KeyValue<String, ClassifierImage>> labeledValidationImages
+                = Classifiers.extractValidationSet(labeledTrainingImages, 50);
 
 
         // train the k-nearest neighbor classifier on the training images
         KNNClassifier knnClassifier = new KNNClassifier();
         knnClassifier.train(labeledTrainingImages);
 
+
         // find k-value for k nearest neighbor with highest accuracy on validation set
-        System.out.println("Tuning k-value:");
+        Logger.log("Tuning k-value:");
         int maxAccuracyKValue = KNNClassifier.findMaxAccuracyKValue(labeledValidationImages, knnClassifier);
-        System.out.println("Using " + maxAccuracyKValue + " nearest neighbor");
+        Logger.log("Using " + maxAccuracyKValue + " nearest neighbor");
 
 
         // evaluation
-        System.out.println("\nPredicting...");
+        Logger.log("\nPredicting...");
         List<ClassifierImage> testImages = new ArrayList<>();
         for(KeyValue<String,ClassifierImage> kv : labeledTestImages) {
             testImages.add(kv.getValue());
         }
 
         // classify images in test set using k nearest neighbor classifier
-        List<KeyValue<String, ClassifierImage>> predictedLabelledImages = knnClassifier.predict(testImages, maxAccuracyKValue);
+        List<KeyValue<String, ClassifierImage>> predictedLabeledImages = knnClassifier.predict(testImages, maxAccuracyKValue);
 
         // display accuracy of classifier-attributed labels
-        System.out.println("Accuracy: " + Calculations.calculateAccuracy(labeledTestImages, predictedLabelledImages)*100+"%");
+        double accuracyPercentage = Classifiers.calculateAccuracy(labeledTestImages, predictedLabeledImages)*100;
+        Logger.log("Accuracy: " + accuracyPercentage + "%");
     }
+
 }

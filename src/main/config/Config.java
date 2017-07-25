@@ -1,4 +1,4 @@
-package config;
+package main.config;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +32,8 @@ public class Config {
     public static int IMAGE_WIDTH = 32;
 
     /** Number of pixels in image for an individual RGB color */
-    public static int ONE_COLOR_FLAT_IMAGE_SIZE = IMAGE_WIDTH * IMAGE_WIDTH;
+    public static int PER_COLOR_FLAT_IMAGE_SIZE = IMAGE_WIDTH * IMAGE_WIDTH;
 
     /** Total number of single-color pixels in image, with each individual RGB color counted separately */
-    public static int RGB_FLAT_IMAGE_SIZE = ONE_COLOR_FLAT_IMAGE_SIZE *3;
+    public static int RGB_FLAT_IMAGE_SIZE = PER_COLOR_FLAT_IMAGE_SIZE * 3;
 }
